@@ -1,13 +1,13 @@
 import random
 
-secret = random.randint(10, 90)
+secret = random.randint(1, 99)
 guess = 0
 tries = 0
 
 print("AHOY! I'm the dread pirate Roberts, and I have a secret!")
-print("It is a number from 10 to 90. I,ll give you 10 tries. ")
+print("It is a number from 1 to 99. I,ll give you 3 tries. ")
 
-while guess !=secret and tries<10:
+while guess !=secret and tries<3:
     guess = int(input("What's yer guess? "))
     if guess < secret:
     	print("Too low, ye scurvy dog!")
