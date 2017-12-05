@@ -141,13 +141,13 @@ while True:
     hit =  pygame.sprite.spritecollide(skier, obstacles, False)
     if hit:
         if hit[0].type == "tree" and not hit[0].passed:  #crashed into tree  
-            points = points - 100
+            points = points - 50
             skier.image = pygame.image.load("skier_crash.png")  # crash image
             animate()  
             pygame.time.delay(1000)
             skier.image = pygame.image.load("skier_down.png")  # resume skiing
             skier.angle = 0
-            speed = [0, 6]
+            speed = [10, 20]
             hit[0].passed = True
         elif hit[0].type == "flag" and not hit[0].passed:   # got a flag
             points += 10
