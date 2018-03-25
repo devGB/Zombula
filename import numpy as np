@@ -1,0 +1,95 @@
+import numpy as np
+import datetime as dt
+import pandas as pd
+import math
+
+'''
+   The purpose of this module is to create a distribution
+   based on a date range.  More options will be created
+   later during feature enhancement
+'''
+def import_data(stn):
+    '''Function opens weather data file and returns full QC file'''
+    dirname = '/home/rs15ntrt/version-control/wx_underground/QC_dat/'+stn+'.qc'
+    return pd.read_table(dirname, sep=',')
+
+def wx_data(archive,wx_date):
+    '''This function will take the station data (archive) and the
+       date of interest (wx_date), and return a distribution from
+       the weather data archive
+    '''
+    new_df = pd.DataFrame()
+    wx_date = dt.datetime.strptime(wx_date, '%Y-%m-%d')
+    archive['record_date'] = pd.to_datetime(archive['record_date'])
+    archive['year'] = pd.DatetimeIndex(archive['record_date']).year
+    archive['month'] = pd.DatetimeIndex(archive['record_date']).month
+    cols = list(archive)
+    wx_date_day = wx_date.day
+    wx_date_month = wx_date.month
+    #return a unique list of years for a loop
+    year_list = archive['year'].unique()
+    for year in year_list:
+        
+        test_date = dt.datetime.strptime(str(year)+'-'+str(wx_date_month)+'-'+str(wx_date_day), '%Y-%m-%d')
+        
+        data = archive.loc[(archive['record_date'] <= test_date + dt.timedelta(days=15)) & 
+                      (archive['record_date'] >= test_date + dt.timedelta(days=-15))]
+        #df.apply(lambda x: x.tolist(), axis=1)
+        #print(data)
+        new_df = pd.concat([new_df,data])
+    return new_df
+
+date_of_interest = '2017-12-26'
+wx_stn = 'KORD'
+select_data = wx_data(import_data(wx_stn),date_of_interest)
+
+
+def std_deviations(data_set, var_type):
+    '''Function takes data set and retuns standard deviations
+    var_type can be "temp_max", "temp_min"...
+    temp_meantd_max,td_mean,td_min,rh_max,rh_mean,
+    rh_min,sl_pres_max,sl_pres_mean,sl_pres_min,vis_max,
+    vis_mean,vis_min,wind_mph_max,wind_mph_mean,windgust_max,
+    precip_inches,cloud_cvr,wx_event,wind_dir_degr
+    '''
+    #remove Null values from set
+    data_values = [value for value in data_set[var_type].values if not math.isnan(value)]
+    std = np.std(data_values)
+    data_mean = np.mean(data_values)
+    return std,data_mean, data_values
+
+mx_std, mx_mean, mx_cleaned_data = std_deviations(select_data,'temp_max')
+
+print(mx_mean+mx_std,mx_mean+2*mx_std,mx_mean+3*mx_std)
+print(mx_mean-mx_std,mx_mean-2*mx_std,mx_mean-3*mx_std)
+
+mn_std, mn_mean, mn_cleaned_data = std_deviations(select_data,'temp_min')
+
+print(mn_mean+mn_std,mn_mean+2*mn_std,mn_mean+3*mn_std)
+print(mn_mean-mn_std,mn_mean-2*mn_std,mn_mean-3*mn_std)
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+from scipy.stats import kurtosis, skew
+'''If skewness is less than -1 or greater than 1, the distribution is highly skewed.
+If skewness is between -1 and -0.5 or between 0.5 and 1, the distribution is moderately skewed.
+If skewness is between -0.5 and 0.5, the distribution is approximately symmetric.
+
+'''
+
+print( 'excess kurtosis of normal distribution (should be 0): {}'.format( kurtosis(mx_cleaned_data) ))
+print( 'skewness of normal distribution (should be 0): {}'.format( skew(mx_cleaned_data) ))
+
+plt.hist(mx_cleaned_data,color='c')
+plt.axvline(mx_mean, color='b', linestyle='dashed', linewidth=2)
+plt.axvline(np.median(mx_cleaned_data),color = 'g', linestyle = 'dashed',
+           linewidth=2)
+
+plt.hist(mn_cleaned_data,color='c')
+plt.axvline(mn_mean, color='b', linestyle='dashed', linewidth=2)
+plt.axvline(np.median(mn_cleaned_data),color = 'g', linestyle = 'dashed',
+           linewidth=2)
+
+print( 'excess kurtosis of normal distribution (should be 0): {}'.format( kurtosis(mn_cleaned_data) ))
+print( 'skewness of normal distribution (should be 0): {}'.format( skew(mn_cleaned_data) ))
+
